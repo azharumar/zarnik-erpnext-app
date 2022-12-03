@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include zarnik *.css
+recursive-include zarnik *.csv
+recursive-include zarnik *.html
+recursive-include zarnik *.ico
+recursive-include zarnik *.js
+recursive-include zarnik *.json
+recursive-include zarnik *.md
+recursive-include zarnik *.png
+recursive-include zarnik *.py
+recursive-include zarnik *.svg
+recursive-include zarnik *.txt
+recursive-exclude zarnik *.pyc

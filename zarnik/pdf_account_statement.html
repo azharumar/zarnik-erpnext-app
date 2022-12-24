@@ -1,0 +1,125 @@
+<head>
+    <style>
+        table.statement td {
+            border: 1px solid #cbdbdb;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        table.statement th {
+            border: 1px solid #cbdbdb;
+            border-collapse: collapse;
+            background-color: #e9f0f0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <table style="width: 100%;">
+        <tbody>
+            <tr>
+                <td style="width: 80%; margin-top: 20px;">
+                    <p style="text-align:left;"><span style="font-size: 16px; font-weight: bold;">Statement of Accounts</span><br>
+                    <span style="font-size: 12px;">{{party_name}} | {{ frappe.format(from_date, {'fieldtype': 'Date'}) }} to {{ frappe.format(to_date, {'fieldtype': 'Date'}) }}</span></p>
+                </td>
+                <td style="width: 20%;">
+                    <img src="/files/zarnik-logo-320x77-gsuite.png" width="130px" align="right">
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    {% set gl = frappe.get_all('GL Entry', filters={'is_cancelled': 0, 'party': party, 'posting_date': ['>', from_date] }, fields=['posting_date', 'voucher_type', 'voucher_no', 'debit', 'credit'], order_by='posting_date asc') %}
+    <table class="statement" width="100%" cellpadding="4" cellspacing="0" style="margin-top: 20px; margin-bottom: 20px;">
+        <colgroup>
+            <col style="text-align: left; width: 15%;">
+            <col style="text-align: left; width: 25%;">
+            <col style="text-align: left; width: 30%;">
+            <col style="text-align: right; width: 15%;">
+            <col style="text-align: right; width: 15%;">
+        </colgroup>
+        <thead>
+            <tr>
+                <th style="text-align: left;">Date</th>
+                <th style="text-align: left;">Document</th>
+                <th style="text-align: left;">Reference</th>
+                <th style="text-align: center;">Debit</th>
+                <th style="text-align: center;">Credit</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td></td>
+                <td>Opening Balance</td>
+                <td></td>
+                <td style="text-align: right;">
+                    {% if opening_debit_balance != 0 %}
+                    {{ frappe.format(opening_debit_balance, {'fieldtype': 'Currency'}) }}
+                    {% else %} &nbsp;-&nbsp;
+                    {%- endif %}
+                </td>
+                <td style="text-align: right;">
+                    {% if opening_credit_balance != 0 %}
+                    {{ frappe.format(opening_credit_balance, {'fieldtype': 'Currency'}) }}
+                    {% else %} &nbsp;-&nbsp;
+                    {%- endif %}
+                </td>
+            </tr>
+            {% for row in gl %}
+            <tr>
+                <td>{{ frappe.format(row.posting_date, {'fieldtype': 'Date'}) }}</td>
+                <td>{{row.voucher_type}} <br><small>{{row.voucher_no}}</small> </td>
+                <td>
+                    {% if row.voucher_type == 'Payment Entry' %}
+                    {% set ref = frappe.db.get_value(row.voucher_type, row.voucher_no, 'reference_no') %}
+                    {% elif row.voucher_type == 'Journal Entry' %}
+                    {% set ref = frappe.db.get_value(row.voucher_type, row.voucher_no,'cheque_no') %}
+                        {% if ref is none %}
+                        {% set ref = frappe.db.get_value(row.voucher_type, row.voucher_no,'user_remark') %}
+                        {%- endif %}
+                    {% elif row.voucher_type == 'Purchase Invoice' %}
+                    {% set ref = frappe.db.get_value(row.voucher_type, row.voucher_no,'bill_no') %}
+                    {% elif row.voucher_type == 'Sales Invoice' %}
+                    {% set ref = frappe.db.get_value(row.voucher_type, row.voucher_no,'name') %}
+                    {% else %}
+                    {% set ref = '&nbsp;&nbsp;' %}
+                    {%- endif %}
+                    {% if ref is none %}
+                    {% set ref = '&nbsp;&nbsp;' %}
+                    {%- endif %}
+                    {{ref}}
+                </td>
+                <td style="text-align: right;">
+                    {% if row.debit != 0 %}
+                    {{ frappe.format(row.debit, {'fieldtype': 'Currency'}) }}
+                    {% else %} &nbsp;-&nbsp;
+                    {%- endif %}
+                </td>
+                <td style="text-align: right;">
+                    {% if row.credit != 0 %}
+                    {{ frappe.format(row.credit, {'fieldtype': 'Currency'}) }}
+                    {% else %} &nbsp;-&nbsp;
+                    {%- endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td></td>
+                <td>Closing Balance</td>
+                <td></td>
+                <td style="text-align: right;">
+                    {% if closing_debit_balance != 0 %}
+                    {{ frappe.format(closing_debit_balance, {'fieldtype': 'Currency'}) }}
+                    {% else %} &nbsp;-&nbsp;
+                    {%- endif %}
+                </td>
+                <td style="text-align: right;">
+                    {% if closing_credit_balance != 0 %}
+                    {{ frappe.format(closing_credit_balance, {'fieldtype': 'Currency'}) }}
+                    {% else %} &nbsp;-&nbsp;
+                    {%- endif %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</body>

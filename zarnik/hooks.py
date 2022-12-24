@@ -95,34 +95,42 @@ app_license = "MIT"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-#	"*": {
-#		"on_update": "method",
-#		"on_cancel": "method",
-#		"on_trash": "method"
-#	}
-# }
+doc_events = {
+	"Purchase Order" : {"on_submit": "zarnik.ap_automation.payments.schedule_payment_requests"},
+	"Purchase Invoice" : {"on_submit": "zarnik.ap_automation.payments.schedule_payment_requests"},
+	"Payment Order" : {"on_submit": "zarnik.ap_automation.payments.send_payment_orders_to_razorpayx"},
+	"Payment Entry" : {"on_submit": "zarnik.ap_automation.payments.send_payment_notification"},
+}
 
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
+scheduler_events = {
+	"cron": {
+		"0 6 * * 1": ["zarnik.ap_automation.payments.create_payment_orders_weekly"],
+		"5 * * * *": ["zarnik.ap_automation.payments.test"],
+		"1/10 * * * *": [
+			"zarnik.ap_automation.payments.check_razorpayx_payment_status_hourly",
+			"zarnik.ap_automation.payments.create_payment_entries_hourly",
+		]
+	},
 #	"all": [
 #		"zarnik.tasks.all"
 #	],
-#	"daily": [
-#		"zarnik.tasks.daily"
-#	],
-#	"hourly": [
-#		"zarnik.tasks.hourly"
-#	],
-#	"weekly": [
-#		"zarnik.tasks.weekly"
-#	]
+	"daily": [
+		"zarnik.procurement_automation.tasks.create_purchase_orders",
+	],
+	"hourly": [
+		"zarnik.ap_automation.payments.create_payment_orders_hourly",
+	],
+	"weekly": [
+		"zarnik.procurement_automation.tasks.set_reorder_values",
+		"zarnik.procurement_automation.tasks.disable_inactive_items",
+	]
 #	"monthly": [
 #		"zarnik.tasks.monthly"
 #	]
-# }
+}
 
 # Testing
 # -------

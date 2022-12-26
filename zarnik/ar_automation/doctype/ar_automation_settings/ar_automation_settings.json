@@ -1,0 +1,86 @@
+{
+ "actions": [],
+ "creation": "2022-12-24 15:12:48.776217",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "daily_invoices_to_customers_section",
+  "send_invoice_daily",
+  "email_template",
+  "sales_invoice_print_format",
+  "sender",
+  "cc",
+  "column_break_5",
+  "attach_statement"
+ ],
+ "fields": [
+  {
+   "fieldname": "daily_invoices_to_customers_section",
+   "fieldtype": "Section Break",
+   "label": "Daily Invoices to Customers"
+  },
+  {
+   "fieldname": "cc",
+   "fieldtype": "Small Text",
+   "label": "Cc"
+  },
+  {
+   "fieldname": "sender",
+   "fieldtype": "Link",
+   "label": "Sender",
+   "options": "Email Account"
+  },
+  {
+   "fieldname": "column_break_5",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "send_invoice_daily",
+   "fieldtype": "Check",
+   "label": "Send Invoices to Customers Daily"
+  },
+  {
+   "fieldname": "sales_invoice_print_format",
+   "fieldtype": "Link",
+   "label": "Sales Invoice Print Format",
+   "options": "Print Format"
+  },
+  {
+   "default": "0",
+   "fieldname": "attach_statement",
+   "fieldtype": "Check",
+   "label": "Attach statement in email"
+  },
+  {
+   "fieldname": "email_template",
+   "fieldtype": "Link",
+   "label": "Email Template",
+   "options": "Email Template"
+  }
+ ],
+ "in_create": 1,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2022-12-26 12:19:05.680398",
+ "modified_by": "Administrator",
+ "module": "AR Automation",
+ "name": "AR Automation Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC"
+}

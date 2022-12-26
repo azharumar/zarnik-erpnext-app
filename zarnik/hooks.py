@@ -100,6 +100,7 @@ doc_events = {
 	"Purchase Invoice" : {"on_submit": "zarnik.ap_automation.payments.schedule_payment_requests"},
 	"Payment Order" : {"on_submit": "zarnik.ap_automation.payments.send_payment_orders_to_razorpayx"},
 	"Payment Entry" : {"on_submit": "zarnik.ap_automation.payments.send_payment_notification"},
+	"Sales Order" : {"on_submit": "zarnik.validations.sales_order_before_submit"}
 }
 
 # Scheduled Tasks
@@ -112,7 +113,8 @@ scheduler_events = {
 		"1/10 * * * *": [
 			"zarnik.ap_automation.payments.check_razorpayx_payment_status_hourly",
 			"zarnik.ap_automation.payments.create_payment_entries_hourly",
-		]
+		],
+		"0 19 * * *": ["zarnik.ar_automation.tasks.send_invoice_daily"]
 	},
 #	"all": [
 #		"zarnik.tasks.all"

@@ -1,24 +1,91 @@
 import frappe
 from frappe.utils import now
+from frappe.utils import today
+
+
+
 
 def send_invoice_daily():
-    recipients = [
-    'azhar.umar@gmail.com'
-    ]
+    from frappe.utils.pdf import get_pdf
+    from frappe.core.doctype.communication.email import make
+    from erpnext.accounts.utils import get_balance_on
+    from zarnik.utils import pdf_account_statement
+    
 
-    cc = []
+    enable = frappe.db.get_single_value("AR Automation Settings","send_invoice_daily")
+    print_format = frappe.db.get_single_value("AR Automation Settings","sales_invoice_print_format")
+    sender = frappe.db.get_single_value("AR Automation Settings","sender")
+    sender = frappe.get_value("Email Account",sender,"email_id")
+    attach_statement = frappe.db.get_single_value("AR Automation Settings","attach_statement")
+    cc = frappe.db.get_single_value("AR Automation Settings","cc")
 
-    frappe.sendmail(
-        recipients=recipients,
-        cc=cc
-        subject="Testime Email ",
-        message="Hello ",
-        expose_recipients=`header`,
-        as_markdown=False, 
-        template=None, 
-        args=None, 
-    )
+    email_template = frappe.db.get_single_value("AR Automation Settings","email_template")
+    use_html = frappe.get_value("Email Template",email_template,"use_html")
+    if use_html == 1:
+        template=frappe.get_value("Email Template",email_template,"response_html")
+    if use_html == 0:
+        template=frappe.get_value("Email Template",email_template,"response")
+    
+    subject = frappe.get_value("Email Template",email_template,"subject")
 
+    if enable==1:
+        date = today()
+        customers = frappe.get_list("Sales Invoice",filters={'posting_date': date, 'docstatus':1}, fields=["customer"], group_by="customer", pluck="customer")
+        for customer in customers:
+            customer_name, unsubscribe = frappe.get_value("Customer",customer,["customer_name", "unsubscribe"])
+            customer_balance = get_balance_on(party_type="Customer",party=customer)
+            if unsubscribe==0:
+                customer_email = frappe.get_all("Contact",filters=[["Dynamic Link","link_doctype","=","Customer"],["Dynamic Link","link_name","=",customer]],fields=["email_id"])
+                customer_invoices = frappe.get_list("Sales Invoice",filters={'posting_date': date, 'docstatus':1, "customer":customer}, fields=["name"], pluck="name")
+                
+                attachments = []
+                if attach_statement==1:
+                    attachments = pdf_account_statement(party_type="Customer", party=customer, party_name=customer_name)
+                for invoice in customer_invoices:
+                    html = frappe.get_print("Sales Invoice", invoice, print_format)
+                    attachments += [{
+                        "fname": "Zarnik Invoice " + str(invoice) + ".pdf",
+                        "fcontent": get_pdf(html)
+                    }]
+
+                recipients=[customer_email]
+
+                import locale
+                locale.setlocale(locale.LC_MONETARY, 'en_IN')
+                
+                # from pathlib import Path
+                # file = Path(__file__).with_name("email_send_invoice_daily.html").absolute()
+                # html = file.read_text()
+
+                data = {
+                "customer": customer,
+                "customer_name": customer_name,
+                "date": date,
+                "balance": customer_balance,
+                "balance_rupee": locale.currency(customer_balance, grouping=True),
+                }
+
+                content = frappe.render_template(template, data)
+                subject = frappe.render_template(subject, data)
+                
+                try:
+                    make(
+                        doctype="Customer",
+                        name="C02201",              #Testing
+                        sender=sender,
+                        reply_to=sender,
+                        content=content,
+                        subject=subject,
+                        recipients=['azhar.umar@gmail.com'],            #Testing
+                        cc=cc,
+                        communication_medium="Email",
+                        send_email=True,
+                        attachments=attachments,
+                        read_receipt=True,
+                    )
+
+                except Exception as e:
+                    frappe.log_error(message=e,title="Error send_invoice_daily")
 
 # @frappe.whitelist()
 # def getData():

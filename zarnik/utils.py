@@ -10,7 +10,7 @@ def pdf_account_statement(party_type, party, party_name):
 
     from erpnext.accounts.utils import get_balance_on
 
-    from_date = add_to_date(datetime.now(), days=-90)
+    from_date = add_to_date(datetime.now(), days=-30)
     to_date = today()
 
     opening_balance = get_balance_on(party_type=party_type, party=party, date=add_to_date(from_date, days=-1))
@@ -38,7 +38,7 @@ def pdf_account_statement(party_type, party, party_name):
     statement = frappe.render_template(html, data)
 
     attachments = [{
-        "fname": str(party)+" "+str(party_name)+" "+str(nowdate())+".pdf",
+        "fname": "Zarnik Statement - "+" "+str(party_name)+" "+str(nowdate())+".pdf",
         "fcontent": get_pdf(statement)
     }]
 

@@ -8,10 +8,10 @@ from requests.exceptions import HTTPError
 
 enable_razorpay = frappe.db.get_single_value('AP Automation Settings', 'enable_razorpay')
 rzpay_key_id = frappe.db.get_single_value('AP Automation Settings', 'rzpay_key_id')
-rzpay_ey_secret = frappe.db.get_single_value('AP Automation Settings', 'rzpay_key_secret')
+rzpay_key_secret = frappe.db.get_single_value('AP Automation Settings', 'rzpay_key_secret')
 from_account = frappe.db.get_single_value('AP Automation Settings', 'rzpay_account_number')
 
-auth = HTTPBasicAuth('rzp_live_LLzQVAyxNVxBqX', 'tNsuOVPcxzayaqK2CgVtwUM8')
+auth = HTTPBasicAuth(rzpay_key_id, rzpay_key_secret)
 
 def payout_composite_bank_account(**payout_info):
 

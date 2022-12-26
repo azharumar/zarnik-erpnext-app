@@ -13,8 +13,6 @@ import requests
 from requests.auth import HTTPBasicAuth
 from requests.exceptions import HTTPError
 
-enable_supplier_email = frappe.db.get_single_value('AP Automation Settings', 'enable_supplier_email')
-
 def schedule_payment_requests(doc, method):
     if doc.enable_automatic_payment == 1:
         for line in doc.get("payment_schedule"):
@@ -204,6 +202,22 @@ def test():
     pass
 
 def send_payment_notification(doc, method):
+    enable_supplier_email = frappe.db.get_single_value('AP Automation Settings', 'enable_supplier_email')
+
+    sender = frappe.db.get_single_value("AP Automation Settings","sender")
+    sender = frappe.get_value("Email Account",sender,"email_id")
+    attach_statement = frappe.db.get_single_value("AP Automation Settings","attach_statement")
+    cc = frappe.db.get_single_value("AP Automation Settings","cc")
+
+    email_template = frappe.db.get_single_value("AP Automation Settings","email_template")
+    use_html = frappe.get_value("Email Template",email_template,"use_html")
+    if use_html == 1:
+        template=frappe.get_value("Email Template",email_template,"response_html")
+    if use_html == 0:
+        template=frappe.get_value("Email Template",email_template,"response")
+    
+    subject = frappe.get_value("Email Template",email_template,"subject")
+
     if enable_supplier_email ==1:
         from erpnext.accounts.utils import get_balance_on
         from frappe.core.doctype.communication.email import make
@@ -226,35 +240,51 @@ def send_payment_notification(doc, method):
 
                     import locale
                     locale.setlocale(locale.LC_MONETARY, 'en_IN')
-                    
-                    file = Path(__file__).with_name("email_supplier_payment_notification.html").absolute()
-                    html = file.read_text()
-                    
-                    email_template = html.format(
-                            party_name = doc.party_name,
-                            mode_of_payment = doc.mode_of_payment,
-                            reference_no = doc.reference_no,
-                            reference_date = doc.reference_date,
-                            paid_amount = locale.currency(doc.paid_amount, grouping=True),
-                            supplier_balance = locale.currency(supplier_balance, grouping=True),
-                            )
-                    subject = "Payment of {paid_amount} successful from Zarnik".format(
-                            party_name = doc.party_name,
-                            mode_of_payment = doc.mode_of_payment,
-                            reference_no = doc.reference_no,
-                            reference_date = doc.reference_date,
-                            paid_amount = locale.currency(doc.paid_amount, grouping=True),
-                            supplier_balance = locale.currency(supplier_balance, grouping=True),
-                            )
 
-                    from zarnik.utils import pdf_account_statement
-                    attachments = pdf_account_statement(party_type=doc.party_type, party=doc.party, party_name=doc.party_name)
+                    data = {
+                        "party_name": doc.party_name,
+                        "mode_of_payment": doc.mode_of_payment,
+                        "reference_no": doc.reference_no,
+                        "reference_date": doc.reference_date,
+                        "paid_amount": locale.currency(doc.paid_amount, grouping=True),
+                        "supplier_balance": locale.currency(supplier_balance, grouping=True),
+                    }
+
+                    content = frappe.render_template(template, data)
+                    subject = frappe.render_template(subject, data)
+                    
+                    # file = Path(__file__).with_name("email_supplier_payment_notification.html").absolute()
+                    # html = file.read_text()
+                    
+                    # email_template = html.format(
+                    #         party_name = doc.party_name,
+                    #         mode_of_payment = doc.mode_of_payment,
+                    #         reference_no = doc.reference_no,
+                    #         reference_date = doc.reference_date,
+                    #         paid_amount = locale.currency(doc.paid_amount, grouping=True),
+                    #         supplier_balance = locale.currency(supplier_balance, grouping=True),
+                    #         )
+                    # subject = "Payment of {paid_amount} successful from Zarnik".format(
+                    #         party_name = doc.party_name,
+                    #         mode_of_payment = doc.mode_of_payment,
+                    #         reference_no = doc.reference_no,
+                    #         reference_date = doc.reference_date,
+                    #         paid_amount = locale.currency(doc.paid_amount, grouping=True),
+                    #         supplier_balance = locale.currency(supplier_balance, grouping=True),
+                    #         )
+
+                    attachments = []
+                    if attach_statement==1:
+                        from zarnik.utils import pdf_account_statement
+                        attachments = pdf_account_statement(party_type=doc.party_type, party=doc.party, party_name=doc.party_name)               
 
                     make(
                         doctype="Payment Entry",
                         name=doc.name,
-                        content=email_template,
+                        content=content,
                         subject=subject,
+                        sender=sender,
+                        reply_to=sender,
                         recipients=recipients,
                         communication_medium="Email",
                         send_email=True,
